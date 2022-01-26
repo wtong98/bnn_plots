@@ -36,7 +36,7 @@ from tqdm import tqdm
 
 #     return Us, X, w_target
 
-def build_sample(points, dims, hidden_widths, sigma=1):
+def build_sample(points, dims, hidden_widths, eta=0):
     d_pairs = zip([dims] + hidden_widths[:-1], hidden_widths)
     Us = [np.random.randn(*pair) for pair in d_pairs]
 
@@ -44,58 +44,97 @@ def build_sample(points, dims, hidden_widths, sigma=1):
     w_target = np.sqrt(dims) * (raw_w_target / np.linalg.norm(raw_w_target))
 
     X = np.random.randn(points, dims)
-    return Us, X, w_target
+    y = (1 / np.sqrt(dims)) * X @ w_target + eta * np.random.randn(X.shape[0], 1)
+    return Us, X, y, w_target
 
 
-def _bias_deep_rr_p_small(F, X, w):
+# def _bias_deep_rr_p_small(F, X, w):
+#     d = X.shape[1]
+
+#     prod1 = (1 / d) * np.linalg.multi_dot([
+#         w.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T),
+#         X, F, F.T, F, F.T, X.T,
+#         np.linalg.pinv(X @ F @ F.T @ X.T), X, w
+#     ]).flatten()[0]
+#     prod2 = (2 / d) * np.linalg.multi_dot([
+#         w.T, F, F.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T),
+#         X, w
+#     ]).flatten()[0]
+#     return prod1 - prod2 + 1
+
+
+# def _var_deep_rr_p_small(F, X, w):
+#     tr1 = np.trace(F @ F.T)
+#     tr2 = np.trace(np.linalg.multi_dot([
+#         X, F, F.T, F, F.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T)
+#     ]))
+#     return tr1 - tr2
+
+def _exp_deep_rr_p_small(F, X, y, w):
     d = X.shape[1]
 
-    prod1 = (1 / d) * np.linalg.multi_dot([
-        w.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T),
-        X, F, F.T, F, F.T, X.T,
-        np.linalg.pinv(X @ F @ F.T @ X.T), X, w
-    ]).flatten()[0]
-    prod2 = (2 / d) * np.linalg.multi_dot([
-        w.T, F, F.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T),
-        X, w
-    ]).flatten()[0]
-    return prod1 - prod2 + 1
+    bias_vec = np.linalg.multi_dot([
+        np.sqrt(d) * F, F.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T), y
+    ]) - w
 
-
-def _var_deep_rr_p_small(F, X, w):
     tr1 = np.trace(F @ F.T)
     tr2 = np.trace(np.linalg.multi_dot([
-        X, F, F.T, F, F.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T)
+        F, F.T, X.T, np.linalg.pinv(X @ F @ F.T @ X.T), X, F, F.T
     ]))
-    return tr1 - tr2
+
+    return (1 / d) * (bias_vec.T @ bias_vec) + (tr1 - tr2)
 
 
-def _bias_deep_rr_p_large_n_small(A, X, w):
+# TODO: old func
+# def _exp_deep_rr_p_large_n_small(A, X, y, w):
+#     d = X.shape[1]
+#     prod1 = (1 / d) * np.linalg.multi_dot([
+#         w.T, X.T, X, A, np.linalg.pinv(A.T @ X.T @ X @ A), 
+#         A.T, A, 
+#         np.linalg.pinv(A.T @ X.T @ X @ A), A.T, X.T, X, w
+#     ]).flatten()[0]
+#     prod2 = (2 / d) * np.linalg.multi_dot([
+#         w.T, A, np.linalg.pinv(A.T @ X.T @ X @ A),
+#         A.T, X.T, X, w
+#     ]).flatten()[0]
+#     return prod1 - prod2 + 1
+
+
+def _exp_deep_rr_p_large_n_small(A, X, y, w):
     d = X.shape[1]
-    prod1 = (1 / d) * np.linalg.multi_dot([
-        w.T, X.T, X, A, np.linalg.pinv(A.T @ X.T @ X @ A), 
-        A.T, A, 
-        np.linalg.pinv(A.T @ X.T @ X @ A), A.T, X.T, X, w
-    ]).flatten()[0]
-    prod2 = (2 / d) * np.linalg.multi_dot([
-        w.T, A, np.linalg.pinv(A.T @ X.T @ X @ A),
-        A.T, X.T, X, w
-    ]).flatten()[0]
-    return prod1 - prod2 + 1
+
+    bias_vec = np.linalg.multi_dot([
+        np.sqrt(d) * A, np.linalg.pinv(A.T @ X.T @ X @ A), A.T, X.T, y
+    ]) - w
+
+    return (1 / d) * bias_vec.T @ bias_vec
 
 
-def _theory_deep_rr_p_small(a, sig, gs):
+def _exp_deep_rr_p_large_n_large(F, X, y, w):
+    d = X.shape[1]
+
+    bias_vec = np.sqrt(d) * np.linalg.pinv(X.T @ X) @ X.T @ y - w
+    return (1/d) * bias_vec.T @ bias_vec
+
+
+def _theory_deep_rr_p_small(a, sig, gs, eta=0):
     term1 = sig ** 2 * (1 - a) * np.prod((gs - a) / gs)
     term2 = (1 - a) * (1 + np.sum(a / (gs - a)))
-    return term1 + term2
+    noise_term = (a / (1 - a) + np.sum(a / (gs - a))) * eta ** 2
+
+    return term1 + term2 + noise_term
 
 
-def _theory_deep_rr_p_large_n_small(a, gs):
+def _theory_deep_rr_p_large_n_small(a, gs, eta=0):
     g_min = np.min(gs)
-    return a * (1 - g_min) / (a - g_min)
+    return a * (1 - g_min) / (a - g_min) + (g_min / (a - g_min)) * eta ** 2
 
 
-def compute_loss(p, d, ns, sig, iters=5):
+def _theory_deep_rr_p_large_n_large(a, eta=0):
+    return (eta ** 2) / (a - 1)
+
+
+def compute_loss(p, d, ns, sig, eta, iters=5):
     a = p / d
     gs = np.array(ns) / d
 
@@ -105,11 +144,11 @@ def compute_loss(p, d, ns, sig, iters=5):
 
     if p < np.min([d] + ns):
         # print('Regime: small p')
-        theory_err = _theory_deep_rr_p_small(a, sig, gs)
+        theory_err = _theory_deep_rr_p_small(a, sig, gs, eta=eta)
 
         exp_errs = []
         for _ in range(iters):
-            Us, X, w = build_sample(p, hidden_widths=ns, dims=d, sigma=sig)
+            Us, X, y, w = build_sample(p, hidden_widths=ns, dims=d, eta=eta)
             if len(Us) > 1:
                 Us_prod = np.linalg.multi_dot(Us)
             else:
@@ -117,7 +156,7 @@ def compute_loss(p, d, ns, sig, iters=5):
 
             F = (sig / np.sqrt(np.prod([d] + ns))) * Us_prod
             
-            err = _bias_deep_rr_p_small(F, X, w) + _var_deep_rr_p_small(F, X, w)
+            err = _exp_deep_rr_p_small(F, X, y, w)
             exp_errs.append(err)
         
         exp_err = np.mean(exp_errs)
@@ -125,11 +164,11 @@ def compute_loss(p, d, ns, sig, iters=5):
 
     elif p > np.min(ns) and np.min(ns) < d:
         # print('Regime: large p, small n')
-        theory_err = _theory_deep_rr_p_large_n_small(a, gs)
+        theory_err = _theory_deep_rr_p_large_n_small(a, gs, eta=eta)
 
         exp_errs = []
         for _ in range(iters):
-            Us, X, w = build_sample(p, hidden_widths=ns, dims=d, sigma=sig)
+            Us, X, y, w = build_sample(p, hidden_widths=ns, dims=d)
             min_idx = np.argmin(ns)
             if min_idx != 0:
                 Us_prod = np.linalg.multi_dot(Us[:min_idx + 1]) 
@@ -137,17 +176,34 @@ def compute_loss(p, d, ns, sig, iters=5):
                 Us_prod = Us[0]
 
             A = (sig / np.sqrt(np.prod([d] + ns[:min_idx + 1]))) * Us_prod
-            err = _bias_deep_rr_p_large_n_small(A, X, w)
+            err = _exp_deep_rr_p_large_n_small(A, X, y, w)
             exp_errs.append(err)
         
         exp_err = np.mean(exp_errs)
         exp_std = np.std(exp_errs)
     
+    elif p == np.min(ns) and p < d:
+        theory_err = 999
+        exp_err = 999
+
+    elif eta > 0 and p > d and np.min(ns) > d:
+        # print('Regime: large p, large n')
+        theory_err = _theory_deep_rr_p_large_n_large(a, eta)
+
+        exp_errs = []
+        for _ in range(iters):
+            _, X, y, w = build_sample(p, hidden_widths=ns, dims=d, eta=eta)
+            
+            err = _exp_deep_rr_p_large_n_large(None, X, y, w)
+            exp_errs.append(err)
+        
+        exp_err = np.mean(exp_errs)
+        exp_std = np.std(exp_errs)
+
     return theory_err, exp_err, exp_std
         
 
-# TODO: visualize as tidy contour plots / line plots
-# theory_err, exp_err, exp_std = compute_loss(p=15, d=10, ns=[5, 20], sig=1, iters=5000)
+# theory_err, exp_err, exp_std = compute_loss(p=5, d=10, ns=[20, 20], sig=1, eta=0, iters=5000)
 # print('theor_err', theory_err)
 # print('  exp_err', exp_err)
 # print('  exp_std', exp_std)
@@ -175,14 +231,15 @@ def compute_loss(p, d, ns, sig, iters=5):
 
 # %%
 # Build plots
-res = 100
+res = 20
 
 d = 100
 ps = np.linspace(1, 200, num=res).astype(int)
 ns = np.linspace(1, 200, num=res).astype(int)
 
 sig = 1
-iters = 10
+eta = 0.1 # TODO: iterate with different eta's and layer plots
+iters = 5
 
 theor_vals = np.zeros(res ** 2)
 exp_vals = np.zeros(res ** 2)
@@ -190,7 +247,7 @@ exp_stds = np.zeros(res ** 2)
 
 pp, nn = np.meshgrid(ps, ns)
 for i, (p, n) in tqdm(enumerate(zip(pp.ravel(), nn.ravel())), total=res ** 2):
-    theor, exp, exp_std = compute_loss(p, d, [n], sig=sig, iters=iters)
+    theor, exp, exp_std = compute_loss(p, d, [n], sig=sig, iters=iters, eta=eta)
     theor_vals[i] = theor
     exp_vals[i] = exp
     exp_stds[i] = exp_std
@@ -258,6 +315,7 @@ n, p, theor, exp, exp_std = _extract_from_frac(0.25)
 axs[0].plot(p / d, exp, label='Experiment', linewidth=2, color='black')
 axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', linestyle='dashed', alpha=0.8)
 axs[0].fill_between(p / d, exp - (2 * exp_std / np.sqrt(iters)), exp + (2 * exp_std / np.sqrt(iters)), alpha=0.7, label='95% CI')
+axs[0].set_ylim(-.1, 5)
 
 axs[0].set_title(fr'$\gamma = {n}$')
 axs[0].set_xlabel(r'$\alpha$')
