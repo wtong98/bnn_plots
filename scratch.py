@@ -168,7 +168,7 @@ def compute_loss(p, d, ns, sig, eta, iters=5):
 
         exp_errs = []
         for _ in range(iters):
-            Us, X, y, w = build_sample(p, hidden_widths=ns, dims=d)
+            Us, X, y, w = build_sample(p, hidden_widths=ns, dims=d, eta=eta)
             min_idx = np.argmin(ns)
             if min_idx != 0:
                 Us_prod = np.linalg.multi_dot(Us[:min_idx + 1]) 
@@ -188,7 +188,7 @@ def compute_loss(p, d, ns, sig, eta, iters=5):
 
     elif eta > 0 and p > d and np.min(ns) > d:
         # print('Regime: large p, large n')
-        theory_err = _theory_deep_rr_p_large_n_large(a, eta)
+        theory_err = _theory_deep_rr_p_large_n_large(a, eta=eta)
 
         exp_errs = []
         for _ in range(iters):
@@ -231,72 +231,87 @@ def compute_loss(p, d, ns, sig, eta, iters=5):
 
 # %%
 # Build plots
-res = 20
+res = 100
 
 d = 100
 ps = np.linspace(1, 200, num=res).astype(int)
 ns = np.linspace(1, 200, num=res).astype(int)
 
 sig = 1
-eta = 0.1 # TODO: iterate with different eta's and layer plots
-iters = 5
+etas = [0, 0.1, 0.5]
+iters = 10
 
-theor_vals = np.zeros(res ** 2)
-exp_vals = np.zeros(res ** 2)
-exp_stds = np.zeros(res ** 2)
+all_theor_vals = []
+all_exp_vals = []
+all_exp_stds = []
 
-pp, nn = np.meshgrid(ps, ns)
-for i, (p, n) in tqdm(enumerate(zip(pp.ravel(), nn.ravel())), total=res ** 2):
-    theor, exp, exp_std = compute_loss(p, d, [n], sig=sig, iters=iters, eta=eta)
-    theor_vals[i] = theor
-    exp_vals[i] = exp
-    exp_stds[i] = exp_std
+for eta in etas:
+    print('Eta: ', eta)
 
-theor_vals = theor_vals.reshape((res, res))
-exp_vals = exp_vals.reshape((res, res))
-exp_stds = exp_stds.reshape((res, res))
+    theor_vals = np.zeros(res ** 2)
+    exp_vals = np.zeros(res ** 2)
+    exp_stds = np.zeros(res ** 2)
+
+    pp, nn = np.meshgrid(ps, ns)
+    for i, (p, n) in tqdm(enumerate(zip(pp.ravel(), nn.ravel())), total=res ** 2):
+        theor, exp, exp_std = compute_loss(p, d, [n], sig=sig, iters=iters, eta=eta)
+        theor_vals[i] = theor
+        exp_vals[i] = exp
+        exp_stds[i] = exp_std
+
+    theor_vals = theor_vals.reshape((res, res))
+    exp_vals = exp_vals.reshape((res, res))
+    exp_stds = exp_stds.reshape((res, res))
+
+    all_theor_vals.append(theor_vals)
+    all_exp_vals.append(exp_vals)
+    all_exp_stds.append(exp_stds)
 
 # <codecell>
-# clipping correction
+# # clipping correction
+# clip_const = 3
+# consts = clip_const * np.ones(theor_vals.shape)
+
+# theor_vals_clip = np.where(theor_vals > clip_const, consts, theor_vals)
+# exp_vals_clip = np.where(exp_vals > clip_const, consts, exp_vals)
+
+# <codecell>
+fig, axs_set = plt.subplots(len(etas), 2, figsize=(12, 5 * len(etas)))
 clip_const = 3
-consts = clip_const * np.ones(theor_vals.shape)
 
-theor_vals_clip = np.where(theor_vals > clip_const, consts, theor_vals)
-exp_vals_clip = np.where(exp_vals > clip_const, consts, exp_vals)
+for i, axs in enumerate(axs_set):
+    theor_vals_clip = np.clip(all_theor_vals[i], -np.inf, clip_const)
+    exp_vals_clip = np.clip(all_exp_vals[i], -np.inf, clip_const)
 
-# <codecell>
-fig, axs = plt.subplots(1, 2, figsize=(12, 5))
-levels = np.linspace(0, 3, 10)
+    ctr0 = axs[0].contourf(pp / d, nn / d, theor_vals_clip)
+    axs[0].plot((0.01, 2), (0.01, 2), linewidth=1.5, linestyle='dashed', color='black', alpha=0.5, label=r'$\alpha = \gamma_{min}$')
+    axs[0].plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
+    axs[0].plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
+    axs[0].legend()
 
-ctr0 = axs[0].contourf(pp / d, nn / d, theor_vals_clip)
-axs[0].plot((0.01, 2), (0.01, 2), linewidth=1.5, linestyle='dashed', color='black', alpha=0.5, label=r'$\alpha = \gamma_{min}$')
-axs[0].plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
-axs[0].plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
-axs[0].legend()
+    axs[0].set_title(rf'Theory ($\eta={etas[i]}$)')
+    axs[0].set_xlabel(r'$\alpha$')
+    axs[0].set_ylabel(r'$\gamma_{min}$')
 
-axs[0].set_title('Theory')
-axs[0].set_xlabel(r'$\alpha$')
-axs[0].set_ylabel(r'$\gamma_{min}$')
+    ctr1 = axs[1].contourf(pp / d, nn / d, exp_vals_clip)
+    axs[1].plot((0.01, 2), (0.01, 2), linewidth=1.5, linestyle='dashed', color='black', alpha=0.5, label=r'$\alpha = \gamma_{min}$')
+    axs[1].plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
+    axs[1].plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
+    axs[1].legend()
 
-ctr1 = axs[1].contourf(pp / d, nn / d, exp_vals_clip)
-axs[1].plot((0.01, 2), (0.01, 2), linewidth=1.5, linestyle='dashed', color='black', alpha=0.5, label=r'$\alpha = \gamma_{min}$')
-axs[1].plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
-axs[1].plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
-axs[1].legend()
+    axs[1].set_title(rf'Experiment ($\eta={etas[i]}$)')
+    axs[1].set_xlabel(r'$\alpha$')
+    axs[1].set_ylabel(r'$\gamma_{min}$')
 
-axs[1].set_title('Experiment')
-axs[1].set_xlabel(r'$\alpha$')
-axs[1].set_ylabel(r'$\gamma_{min}$')
-
-fig.colorbar(ctr0, ax=axs[0])
-fig.colorbar(ctr1, ax=axs[1])
+    fig.colorbar(ctr0, ax=axs[0])
+    fig.colorbar(ctr1, ax=axs[1])
 
 fig.suptitle('Bayesian Random Feature Model Error')
 fig.tight_layout()
 plt.savefig('fig/bnn_rf_error_contour.png')
 
 # %%
-def _extract_from_frac(frac):
+def _extract_from_frac(frac, theor_vals, exp_vals, exp_std):
     n_idx = int(frac * len(nn.ravel()))
     n = nn.ravel()[n_idx]
 
@@ -309,37 +324,47 @@ def _extract_from_frac(frac):
     return n, ps, theor, exp, exp_std
     
 
-fig, axs = plt.subplots(1, 2, figsize=(15, 6))
+fig, axs_set = plt.subplots(len(etas), 2, figsize=(15, len(etas) * 6))
 
-n, p, theor, exp, exp_std = _extract_from_frac(0.25)
-axs[0].plot(p / d, exp, label='Experiment', linewidth=2, color='black')
-axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', linestyle='dashed', alpha=0.8)
-axs[0].fill_between(p / d, exp - (2 * exp_std / np.sqrt(iters)), exp + (2 * exp_std / np.sqrt(iters)), alpha=0.7, label='95% CI')
-axs[0].set_ylim(-.1, 5)
+for i, axs in enumerate(axs_set):
+    theor_vals = all_theor_vals[i]
+    exp_vals = all_exp_vals[i]
+    exp_stds = all_exp_stds[i]
+    eta = etas[i]
 
-axs[0].set_title(fr'$\gamma = {n}$')
-axs[0].set_xlabel(r'$\alpha$')
-axs[0].set_ylabel('Error')
+    n, p, theor, exp, exp_std = _extract_from_frac(0.25, theor_vals, exp_vals, exp_stds)
+    # axs[0].scatter(p / d, exp, label='Experiment', linewidth=2, color='black')
+    # axs[0].fill_between(p / d, exp - (2 * exp_std / np.sqrt(iters)), exp + (2 * exp_std / np.sqrt(iters)), alpha=0.7, label='95% CI')
+    axs[0].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment')
+    axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.9)
+    axs[0].set_ylim(-.1, 5)
 
-axs[0].axhline(y=0, color='k')
-axs[0].axvline(x=0, color='k')
-axs[0].grid(visible=True)
-axs[0].legend()
+    axs[0].set_title(fr'$\gamma = {n}, \eta = {eta}$')
+    axs[0].set_xlabel(r'$\alpha$')
+    axs[0].set_ylabel('Error')
+
+    axs[0].axhline(y=0, color='k')
+    axs[0].axvline(x=0, color='k')
+    axs[0].grid(visible=True)
+    axs[0].legend()
 
 
-n, p, theor, exp, exp_std = _extract_from_frac(0.75)
-axs[1].plot(p / d, exp, label='Experiment', linewidth=2, color='black')
-axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', linestyle='dashed', alpha=0.8)
-axs[1].fill_between(p / d, exp - (2 * exp_std / np.sqrt(iters)), exp + (2 * exp_std / np.sqrt(iters)), alpha=0.7, label='95% CI')
+    n, p, theor, exp, exp_std = _extract_from_frac(0.75, theor_vals, exp_vals, exp_stds)
+    # axs[1].scatter(p / d, exp, label='Experiment', linewidth=2, color='black')
+    # axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', linestyle='dashed', alpha=0.8)
+    # axs[1].fill_between(p / d, exp - (2 * exp_std / np.sqrt(iters)), exp + (2 * exp_std / np.sqrt(iters)), alpha=0.7, label='95% CI')
+    axs[1].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment')
+    axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.9)
+    axs[1].set_ylim(-.1, 5)
 
-axs[1].set_title(fr'$\gamma = {n}$')
-axs[1].set_xlabel(r'$\alpha$')
-axs[1].set_ylabel('Error')
+    axs[1].set_title(fr'$\gamma = {n}, \eta = {eta}$')
+    axs[1].set_xlabel(r'$\alpha$')
+    axs[1].set_ylabel('Error')
 
-axs[1].axhline(y=0, color='k')
-axs[1].axvline(x=0, color='k')
-axs[1].grid(visible=True)
-axs[1].legend()
+    axs[1].axhline(y=0, color='k')
+    axs[1].axvline(x=0, color='k')
+    axs[1].grid(visible=True)
+    axs[1].legend()
 
 fig.suptitle('Cross sections of error surface')
 fig.tight_layout()
