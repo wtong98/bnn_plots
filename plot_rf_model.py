@@ -1,7 +1,7 @@
 """BNN scratch work
 
 This notebook numerically validates generalization results for finite-width
-BNNs
+BNNs (random feature model)
 
 author: William Tong (wtong@g.harvard.edu)
 """
