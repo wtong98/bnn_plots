@@ -1,2 +1,4 @@
 venv_bnn/
 fig/
+
+__pycache__/
