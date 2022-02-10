@@ -221,7 +221,7 @@ sig = 1
 eta = 0
 
 res = 80
-iters = 20
+iters = 10
 
 ns = np.linspace(1, 1000, num=res).astype(int)
 

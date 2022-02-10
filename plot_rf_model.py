@@ -866,7 +866,7 @@ p = 50
 n = 150
 sigs = [0.5, 2]
 
-iters = 10
+iters = 20
 
 ls = np.arange(1, 8)
 
