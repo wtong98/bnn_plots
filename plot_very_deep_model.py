@@ -67,6 +67,17 @@ def _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=5, eps=1e-8):
 
     return (bias + var).flatten()[0]
 
+def _exp_deep_full_p_small_orig(X, y, w, p, n, sig):
+    d = X.shape[1]
+
+    bias_vec = np.sqrt(d) * X.T @ np.linalg.pinv(X @ X.T) @ y - w
+    bias = (1/d) * bias_vec.T @ bias_vec
+
+    q = np.sqrt((n * d * y.T @ np.linalg.pinv(X @ X.T) @ y) / sig ** 2)
+    lim = (sig ** 2 / n) * q * (kv((n - p) / 2 + 1, q) / kv((n - p) / 2, q))
+
+    return (bias + (1 - p/d) * lim).flatten()[0]
+
 
 def _exp_deep_full_p_large(X, y, w):
     d = X.shape[1]
@@ -90,7 +101,44 @@ def compute_loss(p, d, ns, sig, eta, iters=5):
         exp_errs = []
         for _ in range(iters):
             _, X, y, w = build_sample(p, dims=d, eta=eta)
-            err = _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=iters)
+            err = _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=100)
+            exp_errs.append(err)
+        
+        exp_err = np.mean(exp_errs)
+        exp_std = np.std(exp_errs)
+
+    elif p > d:
+        # print('Regime: large p')
+        theory_err = _theory_deep_full_p_large(a, eta=eta)
+
+        exp_errs = []
+        for _ in range(iters):
+            _, X, y, w = build_sample(p, dims=d, eta=eta)
+            err = _exp_deep_full_p_large(X, y, w)
+            exp_errs.append(err)
+        
+        exp_err = np.mean(exp_errs)
+        exp_std = np.std(exp_errs)
+
+    return theory_err, exp_err, exp_std
+
+
+def compute_loss_orig(p, d, ns, sig, eta, iters=5):
+    a = p / d
+    gs = np.array(ns) / d
+
+    theory_err = 0
+    exp_err = 0
+    exp_std = 0
+
+    if p < d:
+        # print('Regime: small p')
+        theory_err = _theory_deep_full_p_small(a, sig, gs, eta=eta)
+
+        exp_errs = []
+        for _ in range(iters):
+            _, X, y, w = build_sample(p, dims=d, eta=eta)
+            err = _exp_deep_full_p_small_orig(X, y, w, p, ns[0], sig)
             exp_errs.append(err)
         
         exp_err = np.mean(exp_errs)
@@ -159,11 +207,28 @@ for l in ls:
 results = np.array([all_theor_vals, all_exp_vals, all_exp_stds])
 np.save('very_deep_results_l_sig4.npy', results)
 
+# <codecell> LOADING
+all_theor_vals, all_exp_vals, all_exp_stds = np.load('very_deep_results_l_sig4.npy')
+
+res = 60
+
+d = 100
+ps = np.linspace(1, 200, num=res).astype(int)
+ns = np.linspace(1, 200, num=res).astype(int)
+
+sig = 2
+eta = 0
+ls = [1, 3, 5]
+iters = 10
+
+pp, nn = np.meshgrid(ps, ns)
+
 # <codecell>
 fig, axs_set = plt.subplots(2, len(ls), figsize=(4 * len(ls), 6))
 axs_set = zip(*axs_set)
 clip_const = 3
 
+all_exp_vals[np.isnan(all_exp_vals)] = 0
 for i, axs in enumerate(axs_set):
     theor_vals_clip = np.clip(all_theor_vals[i], -np.inf, clip_const)
     exp_vals_clip = np.clip(all_exp_vals[i], -np.inf, clip_const)
@@ -191,7 +256,7 @@ for i, axs in enumerate(axs_set):
     fig.colorbar(ctr0, ax=axs[0])
     fig.colorbar(ctr1, ax=axs[1])
 
-fig.suptitle(r'BNN $\sigma^2 = 4$')
+# fig.suptitle(r'BNN $\sigma^2 = 4$')
 fig.tight_layout()
 plt.savefig('fig/bnn_very_deep_error_contour_l_sig4.pdf')
 
@@ -220,7 +285,7 @@ for i, axs in enumerate(axs_set):
     l = ls[i]
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.25, theor_vals, exp_vals, exp_stds)
-    axs[0].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
+    axs[0].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
     axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[0].set_ylim(-.1, 5)
 
@@ -235,7 +300,7 @@ for i, axs in enumerate(axs_set):
 
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.75, theor_vals, exp_vals, exp_stds)
-    axs[1].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
+    axs[1].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
     axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[1].set_ylim(-.1, 5)
 
@@ -248,7 +313,7 @@ for i, axs in enumerate(axs_set):
     axs[1].grid(visible=True)
     axs[1].legend()
 
-fig.suptitle(r'BNN $\sigma^2 = 4$')
+# fig.suptitle(r'BNN $\sigma^2 = 4$')
 fig.tight_layout()
 
 plt.savefig('fig/bnn_very_deep_cross_section_l_sig4.pdf')
@@ -295,16 +360,40 @@ for l in ls:
 results = np.array([all_theor_vals, all_exp_vals, all_exp_stds])
 np.save('very_deep_results_l_sig25.npy', results)
 
+# <codecell> LOADING
+all_theor_vals, all_exp_vals, all_exp_stds = np.load('very_deep_results_l_sig25.npy')
+
+res = 60
+
+d = 100
+ps = np.linspace(1, 200, num=res).astype(int)
+ns = np.linspace(1, 200, num=res).astype(int)
+
+sig = 0.5
+eta = 0
+ls = [1, 3, 5]
+iters = 10
+
+pp, nn = np.meshgrid(ps, ns)
+
 # <codecell>
 fig, axs_set = plt.subplots(2, len(ls), figsize=(4 * len(ls), 6))
 axs_set = zip(*axs_set)
 clip_const = 3
 
-for i, axs in enumerate(axs_set):
+all_exp_vals[np.isnan(all_exp_vals)] = 0
+levels = [
+    [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+    [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+    [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+]
+
+for i, (lev, axs) in enumerate(zip(levels, axs_set)):
     theor_vals_clip = np.clip(all_theor_vals[i], -np.inf, clip_const)
     exp_vals_clip = np.clip(all_exp_vals[i], -np.inf, clip_const)
 
-    ctr0 = axs[0].contourf(pp / d, nn / d, theor_vals_clip, vmax=clip_const, vmin=0)
+
+    ctr0 = axs[0].contourf(pp / d, nn / d, theor_vals_clip, vmax=clip_const, vmin=0, levels=lev)
     axs[0].plot((0.01, 2), (0.01, 2), linewidth=3, linestyle='dashed', color='black', alpha=0.5, label=r'$\alpha = \gamma_{min}$')
     axs[0].plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
     axs[0].plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
@@ -314,7 +403,7 @@ for i, axs in enumerate(axs_set):
     axs[0].set_xlabel(r'$\alpha$')
     axs[0].set_ylabel(r'$\gamma_{min}$')
 
-    ctr1 = axs[1].contourf(pp / d, nn / d, exp_vals_clip, vmax=clip_const, vmin=0)
+    ctr1 = axs[1].contourf(pp / d, nn / d, exp_vals_clip, vmax=clip_const, vmin=0, levels=lev)
     axs[1].plot((0.01, 2), (0.01, 2), linewidth=3, linestyle='dashed', color='black', alpha=0.5, label=r'$\alpha = \gamma_{min}$')
     axs[1].plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
     axs[1].plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
@@ -327,7 +416,7 @@ for i, axs in enumerate(axs_set):
     fig.colorbar(ctr0, ax=axs[0])
     fig.colorbar(ctr1, ax=axs[1])
 
-fig.suptitle(r'BNN $\sigma^2 = 4$')
+# fig.suptitle(r'BNN $\sigma^2 = 4$')
 fig.tight_layout()
 plt.savefig('fig/bnn_very_deep_error_contour_l_sig25.pdf')
 
@@ -356,7 +445,7 @@ for i, axs in enumerate(axs_set):
     l = ls[i]
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.25, theor_vals, exp_vals, exp_stds)
-    axs[0].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
+    axs[0].scatter(p / d, exp,alpha=0.6, label='Experiment', zorder=-1)
     axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[0].set_ylim(-.1, 5)
 
@@ -371,7 +460,7 @@ for i, axs in enumerate(axs_set):
 
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.75, theor_vals, exp_vals, exp_stds)
-    axs[1].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
+    axs[1].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
     axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[1].set_ylim(-.1, 5)
 
@@ -384,7 +473,32 @@ for i, axs in enumerate(axs_set):
     axs[1].grid(visible=True)
     axs[1].legend()
 
-fig.suptitle(r'BNN $\sigma^2 = 4$')
+# fig.suptitle(r'BNN $\sigma^2 = 0.25$')
 fig.tight_layout()
 
 plt.savefig('fig/bnn_very_deep_cross_section_l_sig25.pdf')
+
+# <codecell>
+### Confirm old and new simulations agree
+
+# d = 100
+# n = 50
+# sig = 2
+
+# res = 20
+# iters = 5
+# ps = np.linspace(1, 100, num=res).astype(int)
+
+
+# vals_new = [compute_loss(p, d, [n], sig, eta=0, iters=iters) for p in ps]
+# theor_new, exp_new, std_new = zip(*vals_new)
+
+# vals_orig = [compute_loss_orig(p, d, [n], sig, eta=0) for p in ps]
+# theor_orig, exp_orig, std_orig = zip(*vals_orig)
+
+# # <codecell>
+# plt.errorbar(ps / d, exp_new, yerr=2 * np.array(std_new) / np.sqrt(iters), fmt='-o', alpha=0.6, label='New sim', zorder=-1)
+# plt.errorbar(ps / d, exp_orig, yerr=2 * np.array(std_orig) / np.sqrt(iters), fmt='-o', alpha=0.6, label='Old sim', zorder=-1)
+# plt.plot(ps / d, theor_new, label='Theory', linewidth=2, color='red', alpha=0.7)
+
+# plt.legend()
