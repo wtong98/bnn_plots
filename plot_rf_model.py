@@ -837,7 +837,7 @@ for sig in sigs:
 
 g_opt = sigs[1] / (sigs[1] - 1) * (p / d)
 
-fig, axs_set = plt.subplots(1, 4, figsize=(16, 3))
+fig, axs_set = plt.subplots(1, 4, figsize=(12, 3))
 
 axs = axs_set[:2]
 for ax, theor, exp, exp_std in zip(axs.ravel(), all_theor_vals, all_exp_vals, all_exp_stds):
@@ -855,7 +855,7 @@ for ax, theor, exp, exp_std in zip(axs.ravel(), all_theor_vals, all_exp_vals, al
 axs[0].set_title(r'$\tilde{\sigma} \leq 1$')
 axs[1].set_title(r'$\tilde{\sigma} > 1$')
 
-axs[1].axvline(x=g_opt, color='gray', linestyle='dashed', linewidth=2, label=r'$\gamma_*$')
+axs[1].axvline(x=g_opt, color='gray', linestyle='dashed', linewidth=2, label=r'$\gamma_{\star}$')
 
 axs[0].legend()
 axs[1].legend()
@@ -900,7 +900,7 @@ for ax, theor, exp, exp_std in zip(axs.ravel(), all_theor_vals, all_exp_vals, al
 axs[0].set_title(r'$\tilde{\sigma} \leq 1$')
 axs[1].set_title(r'$\tilde{\sigma} > 1$')
 
-axs[1].axvline(x=l_opt, color='gray', linestyle='dashed', linewidth=2, label=r'$\l_*$')
+axs[1].axvline(x=l_opt, color='gray', linestyle='dashed', linewidth=2, label=r'$l_\star$')
 
 axs[0].legend()
 axs[1].legend()

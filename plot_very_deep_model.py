@@ -1,4 +1,5 @@
 # <codecell>
+from distutils.command.build import build
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import kv
@@ -37,12 +38,12 @@ def _theory_deep_full_p_large(a, eta=0):
     return (eta ** 2) / (a - 1)
 
 
-def _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=5, eps=1e-8):
+def _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=5, boot_samps=100, eps=1e-8):
     d = X.shape[1]
     d_pairs = list(zip(ns, ns[1:] + [1]))
 
-    est_num = 0
-    est_den = 0
+    est_num = []
+    est_den = []
     for _ in range(iters):
         factor = (sig / np.sqrt(d * np.prod(ns)))
         if len(d_pairs) == 1:
@@ -58,14 +59,25 @@ def _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=5, eps=1e-8):
         num = (f2 / fp) * np.exp((-y.T @ np.linalg.pinv(X @ X.T) @ y) / (2 * f2))
         den = (1 / fp) * np.exp((-y.T @ np.linalg.pinv(X @ X.T) @ y) / (2 * f2))
 
-        est_num += num / iters
-        est_den += den / iters + eps # TODO: harden numerical operations
+        est_num.append(num)
+        est_den.append(den)
     
-    var = (1 - p/d) * d * est_num / est_den
+    samp_idxs = np.random.randint(0, iters, (boot_samps, iters))
+    est_num = np.array(est_num)
+    est_den = np.array(est_den)
+
+    boot_num = np.mean(est_num[samp_idxs], axis=1)
+    boot_den = np.mean(est_den[samp_idxs], axis=1)
+    boot_err_var = (1 - p/d) * d * boot_num / boot_den
+
+    err_var_mean = np.mean(boot_err_var)
+    err_var_var = np.var(boot_err_var)
+
     bias_vec = np.sqrt(d) * np.linalg.pinv(X.T @ X) @ X.T @ y - w
     bias = (1/d) * bias_vec.T @ bias_vec
+    
+    return (bias + err_var_mean).flatten()[0], err_var_var
 
-    return (bias + var).flatten()[0]
 
 def _exp_deep_full_p_small_orig(X, y, w, p, n, sig):
     d = X.shape[1]
@@ -99,13 +111,15 @@ def compute_loss(p, d, ns, sig, eta, iters=5):
         theory_err = _theory_deep_full_p_small(a, sig, gs, eta=eta)
 
         exp_errs = []
+        exp_vars = []
         for _ in range(iters):
             _, X, y, w = build_sample(p, dims=d, eta=eta)
-            err = _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=100)
+            err, samp_var = _exp_deep_full_p_small(X, y, w, p, ns, sig, iters=100)
             exp_errs.append(err)
+            exp_vars.append(samp_var)
         
         exp_err = np.mean(exp_errs)
-        exp_std = np.std(exp_errs)
+        exp_std = np.sqrt(np.mean(exp_vars))
 
     elif p > d:
         # print('Regime: large p')
@@ -160,7 +174,7 @@ def compute_loss_orig(p, d, ns, sig, eta, iters=5):
     return theory_err, exp_err, exp_std
 
 
-# theory_err, exp_err, exp_std = compute_loss(p=50, d=100, ns=[20, 20, 20], sig=1, eta=0, iters=5)
+# theory_err, exp_err, exp_std = compute_loss(p=60, d=100, ns=[20, 20, 20], sig=1, eta=0, iters=5)
 # print('theor_err', theory_err)
 # print('  exp_err', exp_err)
 # print('  exp_std', exp_std)
@@ -285,7 +299,7 @@ for i, axs in enumerate(axs_set):
     l = ls[i]
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.25, theor_vals, exp_vals, exp_stds)
-    axs[0].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
+    axs[0].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
     axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[0].set_ylim(-.1, 5)
 
@@ -300,7 +314,7 @@ for i, axs in enumerate(axs_set):
 
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.75, theor_vals, exp_vals, exp_stds)
-    axs[1].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
+    axs[1].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
     axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[1].set_ylim(-.1, 5)
 
@@ -445,7 +459,7 @@ for i, axs in enumerate(axs_set):
     l = ls[i]
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.25, theor_vals, exp_vals, exp_stds)
-    axs[0].scatter(p / d, exp,alpha=0.6, label='Experiment', zorder=-1)
+    axs[0].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
     axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[0].set_ylim(-.1, 5)
 
@@ -460,7 +474,7 @@ for i, axs in enumerate(axs_set):
 
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.75, theor_vals, exp_vals, exp_stds)
-    axs[1].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
+    axs[1].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
     axs[1].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[1].set_ylim(-.1, 5)
 
