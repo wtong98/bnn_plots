@@ -265,6 +265,7 @@ axs_set[2][1].set_title(r'$\eta > 0$')
 fig.suptitle('Placeholder')
 fig.tight_layout()
 
+plt.savefig('../fig/rf_noisy_labels.png')
 
 # %%
 ## FIGURE 2 GENERATION
@@ -362,6 +363,8 @@ axs_set[1][1].set_title(r'$\alpha > 1$')
 
 fig.suptitle('Double descent in deep RF models depends on the narrowest hidden layer')
 fig.tight_layout()
+
+plt.savefig('../fig/rf_narrowest_hidden_layer.png')
 
 
 # %%
@@ -521,4 +524,6 @@ axs_set[3][1].set_title(r'$\sigma > 1$')
 
 fig.suptitle('Optimal RF model architecture depends on target-prior mismatch')
 fig.tight_layout()
+
+plt.savefig('../fig/rf_target_prior_mismatch.png')
 # %%
