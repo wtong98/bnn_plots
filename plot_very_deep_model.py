@@ -1,5 +1,4 @@
 # <codecell>
-from distutils.command.build import build
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import kv
@@ -459,7 +458,7 @@ for i, axs in enumerate(axs_set):
     l = ls[i]
 
     n, p, theor, exp, exp_std = _extract_from_frac(0.25, theor_vals, exp_vals, exp_stds)
-    axs[0].scatter(p / d, exp, alpha=0.6, label='Experiment', zorder=-1)
+    axs[0].errorbar(p / d, exp, yerr=2 * exp_std / np.sqrt(iters), fmt='-o', alpha=0.6, label='Experiment', zorder=-1)
     axs[0].plot(p / d, theor, label='Theory', linewidth=2, color='red', alpha=0.7)
     axs[0].set_ylim(-.1, 5)
 

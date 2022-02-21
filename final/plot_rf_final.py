@@ -220,12 +220,13 @@ for i, (ax, eta) in enumerate(zip(axs_set[0], etas)):
 axs_set[0][0].set_title(r'$\eta = 0$')
 axs_set[0][1].set_title(r'$\eta > 0$')
 
-jitter = 1e-2
+skip_idx = 2
+jitter = 0
 for i, (ax, eta) in enumerate(zip(axs_set[1], etas)):
     for j, (frac, label) in enumerate([(0.25, 0.5), (0.75, 1.5)]):
         n, ps, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], nn, pp)
 
-        ax.errorbar(ps / d + np.random.randn() * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        ax.errorbar(ps[::skip_idx] / d + jitter, exp[::skip_idx], yerr=2 * std[::skip_idx] / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
         ax.plot(ps / d, theor, label=r'$\gamma_{min} = %.1f$' % label, linewidth=1, color=f'C{j}')
 
         ax.set_ylim(-.1, 5)
@@ -246,7 +247,7 @@ for i, (ax, eta) in enumerate(zip(axs_set[2], etas)):
         p, ns, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], pp, nn, vert=True)
         print(p)
 
-        ax.errorbar(ns / d + np.random.randn() * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        ax.errorbar(ps[::skip_idx] / d + jitter, exp[::skip_idx], yerr=2 * std[::skip_idx] / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
         ax.plot(ns / d, theor, label=r'$\alpha = %.1f$' % label, linewidth=1, color=f'C{j}')
 
         ax.set_ylim(-.1, 5)
@@ -265,7 +266,7 @@ axs_set[2][1].set_title(r'$\eta > 0$')
 fig.suptitle('Placeholder')
 fig.tight_layout()
 
-plt.savefig('../fig/rf_noisy_labels.png')
+plt.savefig('../fig/rf_noisy_labels.pdf')
 
 # %%
 ## FIGURE 2 GENERATION
@@ -342,10 +343,11 @@ for i, ax in enumerate(axs_set[1]):
     for j, (frac, label) in enumerate([(0.15, 0.3), (0.75, 1.5)]):
         n, ps, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], nn2, nn1)
 
-        ax.errorbar(ps / d + j * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        # ax.errorbar(ps / d + j * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        ax.errorbar(ps[::skip_idx] / d + jitter, exp[::skip_idx], yerr=2 * std[::skip_idx] / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
         ax.plot(ps / d, theor, label=r'$\gamma_2 = %.1f$' % label, linewidth=1, color=f'C{j}')
 
-        if j == 1:
+        if j == 1 and i == 0:
             ax.axvline(x=0.3, color='gray', linestyle='dashed', alpha=0.9, label=r'$\gamma_1=0.3$')
 
         ax.set_ylim(-.1, 5)
@@ -364,7 +366,7 @@ axs_set[1][1].set_title(r'$\alpha > 1$')
 fig.suptitle('Double descent in deep RF models depends on the narrowest hidden layer')
 fig.tight_layout()
 
-plt.savefig('../fig/rf_narrowest_hidden_layer.png')
+plt.savefig('../fig/rf_narrowest_hidden_layer.pdf')
 
 
 # %%
@@ -474,7 +476,8 @@ for i, ax in enumerate(axs_set[2]):
     for j, (frac, label) in enumerate([(0.15, 0.3), (0.4, 0.8)]):
         p, ns, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], pp, nn, vert=True)
 
-        ax.errorbar(ns / d + j * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        # ax.errorbar(ns / d + j * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        ax.errorbar(ns[::skip_idx] / d + jitter, exp[::skip_idx], yerr=2 * std[::skip_idx] / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
         ax.plot(ns / d, theor, label=r'$\alpha = %.1f$' % label, linewidth=1, color=f'C{j}')
 
         if i == 1:
@@ -525,5 +528,5 @@ axs_set[3][1].set_title(r'$\sigma > 1$')
 fig.suptitle('Optimal RF model architecture depends on target-prior mismatch')
 fig.tight_layout()
 
-plt.savefig('../fig/rf_target_prior_mismatch.png')
+plt.savefig('../fig/rf_target_prior_mismatch.pdf')
 # %%
