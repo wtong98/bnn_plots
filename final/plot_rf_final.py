@@ -157,7 +157,7 @@ def _extract_from_frac(frac, theor_vals, exp_vals, exp_stds, nn, pp, vert=False)
 
 # <codecell>
 ### FIGURE 1 generation
-res = 20
+res = 80
 
 d = 100
 ps = np.linspace(1, 200, num=res).astype(int)
@@ -166,7 +166,7 @@ pp, nn = np.meshgrid(ps, ns)
 
 sig = 1
 etas = [0, 0.5]
-iters = 5
+iters = 10
 
 if Path('rf_results_fig1.npy').exists():
     all_theor_vals, all_exp_vals, all_exp_stds = np.load('rf_results_fig1.npy')
@@ -269,7 +269,7 @@ plt.savefig('../fig/rf_noisy_labels.png')
 
 # %%
 ## FIGURE 2 GENERATION
-res = 20
+res = 80
 
 d = 100
 n1s = np.linspace(1, 200, num=res).astype(int)
@@ -279,7 +279,7 @@ nn1, nn2 = np.meshgrid(n1s, n2s)
 sig = 1
 eta = 0
 ps = [50, 150]
-iters = 5
+iters = 10
 
 results_path = Path('rf_results_fig2.npy')
 if results_path.exists():
@@ -369,7 +369,7 @@ plt.savefig('../fig/rf_narrowest_hidden_layer.png')
 
 # %%
 ## FIGURE 3 GENERATION
-res = 20
+res = 80
 
 d = 100
 ps = np.linspace(1, 200, num=res).astype(int)
@@ -379,7 +379,7 @@ pp, nn = np.meshgrid(ps, ns)
 ls = [1, 5]
 sigs = [0.5, 2]
 eta = 0
-iters = 5
+iters = 10
 
 # results order: (l, s, l, s, p, s, p, s)
 if Path('rf_results_fig3.npy').exists():
