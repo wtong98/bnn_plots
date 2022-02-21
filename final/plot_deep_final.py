@@ -137,7 +137,7 @@ for i, (ax, eta) in enumerate(zip(axs_set[2], etas)):
 axs_set[2][0].set_title(r'$\eta = 0$')
 axs_set[2][1].set_title(r'$\eta > 0$')
 
-fig.suptitle('Placeholder')
+# fig.suptitle('Placeholder')
 fig.tight_layout()
 
 plt.savefig('../fig/nn_noisy_labels.pdf')
@@ -154,7 +154,7 @@ n2s = np.linspace(1, 200, num=res).astype(int)
 nn1, nn2 = np.meshgrid(n1s, n2s)
 
 sig = 1
-eta = 1
+eta = 0.6
 ps = [50, 150]
 iters = 5
 inner_iters=200
@@ -197,7 +197,10 @@ clip_const = 3
 for i, (ax, p) in enumerate(zip(axs_set[0], ps)):
     theor_vals_clip = np.clip(all_theor_vals[i], -np.inf, clip_const)
 
-    ctr0 = ax.contourf(nn1 / d, nn2 / d, theor_vals_clip, vmin=0, vmax=clip_const)
+    if i == 1:
+        ctr0 = ax.contourf(nn1 / d, nn2 / d, theor_vals_clip, vmin=0, vmax=clip_const)
+    else:
+        ctr0 = ax.contourf(nn1 / d, nn2 / d, theor_vals_clip, vmin=0, vmax=clip_const)
     ax.plot((0.01, 2), (0.01, 2), linewidth=3, linestyle='dashed', color='black', alpha=0.5, label=r'$\gamma_1 = \gamma_2$')
     ax.plot((0.01, 2), (1, 1), linewidth=1.5, color='black', alpha=0.5)
     ax.plot((1, 1), (0.01, 2), linewidth=1.5, color='black', alpha=0.5)
@@ -210,7 +213,10 @@ for i, (ax, p) in enumerate(zip(axs_set[0], ps)):
     ax.set_xlabel(r'$\gamma_1$')
     ax.set_ylabel(r'$\gamma_2$')
 
-    fig.colorbar(ctr0, ax=ax)
+    if i == 1:
+        fig.colorbar(ctr0, ax=ax, format='%.2f', ticks=[0.72])
+    else:
+        fig.colorbar(ctr0, ax=ax)
 
 axs_set[0][0].set_title(r'$\alpha < 1$')
 axs_set[0][1].set_title(r'$\alpha > 1$')
@@ -239,7 +245,7 @@ for i, ax in enumerate(axs_set[1]):
 axs_set[1][0].set_title(r'$\alpha < 1$')
 axs_set[1][1].set_title(r'$\alpha > 1$')
 
-fig.suptitle('Double descent in deep NN models depends on the narrowest hidden layer')
+# fig.suptitle('Double descent in deep NN models depends on the narrowest hidden layer')
 fig.tight_layout()
 
 plt.savefig('../fig/nn_narrowest_hidden_layer.pdf')
@@ -403,7 +409,7 @@ axs_set[3][0].set_title(r'$\sigma = 1$')
 axs_set[3][1].set_title(r'$\sigma > 1$')
 
 # TODO: optimal calculation may not still work
-fig.suptitle('Optimal NN model architecture depends on target-prior mismatch')
+# fig.suptitle('Optimal NN model architecture depends on target-prior mismatch')
 fig.tight_layout()
 
 plt.savefig('../fig/nn_target_prior_mismatch.pdf')

@@ -166,7 +166,7 @@ pp, nn = np.meshgrid(ps, ns)
 
 sig = 1
 etas = [0, 0.5]
-iters = 10
+iters = 20
 
 if Path('rf_results_fig1.npy').exists():
     all_theor_vals, all_exp_vals, all_exp_stds = np.load('rf_results_fig1.npy')
@@ -263,7 +263,7 @@ for i, (ax, eta) in enumerate(zip(axs_set[2], etas)):
 axs_set[2][0].set_title(r'$\eta = 0$')
 axs_set[2][1].set_title(r'$\eta > 0$')
 
-fig.suptitle('Placeholder')
+# fig.suptitle('Placeholder')
 fig.tight_layout()
 
 plt.savefig('../fig/rf_noisy_labels.pdf')
@@ -280,7 +280,7 @@ nn1, nn2 = np.meshgrid(n1s, n2s)
 sig = 1
 eta = 0
 ps = [50, 150]
-iters = 10
+iters = 20
 
 results_path = Path('rf_results_fig2.npy')
 if results_path.exists():
@@ -363,7 +363,7 @@ for i, ax in enumerate(axs_set[1]):
 axs_set[1][0].set_title(r'$\alpha < 1$')
 axs_set[1][1].set_title(r'$\alpha > 1$')
 
-fig.suptitle('Double descent in deep RF models depends on the narrowest hidden layer')
+# fig.suptitle('Double descent in deep RF models depends on the narrowest hidden layer')
 fig.tight_layout()
 
 plt.savefig('../fig/rf_narrowest_hidden_layer.pdf')
@@ -381,7 +381,7 @@ pp, nn = np.meshgrid(ps, ns)
 ls = [1, 5]
 sigs = [0.5, 2]
 eta = 0
-iters = 10
+iters = 20
 
 # results order: (l, s, l, s, p, s, p, s)
 if Path('rf_results_fig3.npy').exists():
@@ -525,7 +525,7 @@ for i, ax in enumerate(axs_set[3]):
 axs_set[3][0].set_title(r'$\sigma = 1$')
 axs_set[3][1].set_title(r'$\sigma > 1$')
 
-fig.suptitle('Optimal RF model architecture depends on target-prior mismatch')
+# fig.suptitle('Optimal RF model architecture depends on target-prior mismatch')
 fig.tight_layout()
 
 plt.savefig('../fig/rf_target_prior_mismatch.pdf')
