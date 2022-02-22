@@ -371,6 +371,7 @@ plt.savefig('../fig/rf_narrowest_hidden_layer.pdf')
 
 # %%
 ## FIGURE 3 GENERATION
+# TODO: convert sigma --> sigma^2
 res = 80
 
 d = 100

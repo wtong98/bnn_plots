@@ -154,10 +154,10 @@ n2s = np.linspace(1, 200, num=res).astype(int)
 nn1, nn2 = np.meshgrid(n1s, n2s)
 
 sig = 1
-eta = 0.6
+eta = 0.75
 ps = [50, 150]
 iters = 5
-inner_iters=200
+inner_iters = 200
 
 results_path = Path('deep_results_fig2.npy')
 if results_path.exists():
@@ -214,7 +214,7 @@ for i, (ax, p) in enumerate(zip(axs_set[0], ps)):
     ax.set_ylabel(r'$\gamma_2$')
 
     if i == 1:
-        fig.colorbar(ctr0, ax=ax, format='%.2f', ticks=[0.72])
+        fig.colorbar(ctr0, ax=ax, format='%.2f')
     else:
         fig.colorbar(ctr0, ax=ax)
 

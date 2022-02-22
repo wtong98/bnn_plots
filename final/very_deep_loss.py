@@ -1,3 +1,5 @@
+# <codecell>
+
 import numpy as np
 from sympy import symbols, prod, real_roots
 
@@ -101,7 +103,7 @@ def compute_loss(p, d, ns, sig, eta, iters=5, inner_iters=100):
             exp_vars.append(samp_var)
         
         exp_err = np.mean(exp_errs)
-        exp_std = np.sqrt(np.mean(exp_vars))
+        exp_std = np.sqrt(np.mean(exp_vars) + np.var(exp_errs)) # iterated variance
 
     elif p > d:
         # print('Regime: large p')
@@ -117,3 +119,16 @@ def compute_loss(p, d, ns, sig, eta, iters=5, inner_iters=100):
         exp_std = np.std(exp_errs)
 
     return theory_err, exp_err, exp_std
+
+# <codecell>
+# p = 50
+# d = 100
+# n = 50
+# sig = 1
+# eta = 1
+
+# theor, exp, std = compute_loss(p, d, [n], sig, eta, iters=5, inner_iters=5)
+
+# print(theor)
+# print(exp)
+# print(std)
