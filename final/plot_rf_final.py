@@ -371,7 +371,6 @@ plt.savefig('../fig/rf_narrowest_hidden_layer.pdf')
 
 # %%
 ## FIGURE 3 GENERATION
-# TODO: convert sigma --> sigma^2
 res = 80
 
 d = 100
@@ -452,8 +451,8 @@ for i, ax in enumerate(axs_set[0]):
 
     fig.colorbar(ctr0, ax=ax)
 
-axs_set[0][0].set_title(r'$\sigma = 1, \ell = 1$')
-axs_set[0][1].set_title(r'$\sigma > 1, \ell = 1$')
+axs_set[0][0].set_title(r'$\sigma^2 = 1, \ell = 1$')
+axs_set[0][1].set_title(r'$\sigma^2 > 1, \ell = 1$')
 
 for i, ax in enumerate(axs_set[1]):
     theor_vals_clip = np.clip(all_theor_vals[i+2], -np.inf, clip_const)
@@ -469,10 +468,10 @@ for i, ax in enumerate(axs_set[1]):
 
     fig.colorbar(ctr0, ax=ax)
 
-axs_set[1][0].set_title(r'$\sigma = 1, \ell > 1$')
-axs_set[1][1].set_title(r'$\sigma > 1, \ell > 1$')
+axs_set[1][0].set_title(r'$\sigma^2 = 1, \ell > 1$')
+axs_set[1][1].set_title(r'$\sigma^2 > 1, \ell > 1$')
 
-jitter = 1e-2
+jitter = 0
 for i, ax in enumerate(axs_set[2]):
     for j, (frac, label) in enumerate([(0.15, 0.3), (0.4, 0.8)]):
         p, ns, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], pp, nn, vert=True)
@@ -482,7 +481,7 @@ for i, ax in enumerate(axs_set[2]):
         ax.plot(ns / d, theor, label=r'$\alpha = %.1f$' % label, linewidth=1, color=f'C{j}')
 
         if i == 1:
-            g_opt = sigs[1] / (sigs[1] - 1) * label
+            g_opt = (sigs[1]**2/2) / ((sigs[1]**2/2) - 1) * label
             ax.axvline(x=g_opt - 10 * jitter, color=f'C{j}', linestyle='dashed', alpha=0.5)
 
         ax.set_ylim(-.1, 5)
@@ -495,8 +494,8 @@ for i, ax in enumerate(axs_set[2]):
         ax.grid(visible=True)
         ax.legend()
 
-axs_set[2][0].set_title(r'$\sigma = 1, \ell = 1$')
-axs_set[2][1].set_title(r'$\sigma > 1, \ell = 1$')
+axs_set[2][0].set_title(r'$\sigma^2 = 1, \ell = 1$')
+axs_set[2][1].set_title(r'$\sigma^2 > 1, \ell = 1$')
 
 
 for i, ax in enumerate(axs_set[3]):
@@ -523,8 +522,8 @@ for i, ax in enumerate(axs_set[3]):
         ax.grid(visible=True)
         ax.legend()
 
-axs_set[3][0].set_title(r'$\sigma = 1$')
-axs_set[3][1].set_title(r'$\sigma > 1$')
+axs_set[3][0].set_title(r'$\sigma^2 = 1$')
+axs_set[3][1].set_title(r'$\sigma^2 > 1$')
 
 # fig.suptitle('Optimal RF model architecture depends on target-prior mismatch')
 fig.tight_layout()

@@ -97,8 +97,8 @@ skip_idx = 2
 for i, (ax, eta) in enumerate(zip(axs_set[1], etas)):
     for j, (frac, label) in enumerate([(0.25, 0.5), (0.75, 1.5)]):
         n, ps, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], nn, pp)
+        std[std > 10] = 0 # squelch awkwardly long SE at singularity
 
-        # ax.errorbar(ps / d, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
         ax.errorbar(ps[::skip_idx] / d, exp[::skip_idx], yerr=2 * std[::skip_idx] / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=1 - j * 0.5, markersize=5)
         ax.plot(ps / d, theor, label=r'$\gamma_{min} = %.1f$' % label, linewidth=1, color=f'C{j}')
 
@@ -154,9 +154,9 @@ n2s = np.linspace(1, 200, num=res).astype(int)
 nn1, nn2 = np.meshgrid(n1s, n2s)
 
 sig = 1
-eta = 0.75
+eta = 0
 ps = [50, 150]
-iters = 5
+iters = 200
 inner_iters = 200
 
 results_path = Path('deep_results_fig2.npy')
@@ -222,12 +222,13 @@ axs_set[0][0].set_title(r'$\alpha < 1$')
 axs_set[0][1].set_title(r'$\alpha > 1$')
 
 jitter = 1e-2
+skip_idx = 2
 for i, ax in enumerate(axs_set[1]):
     for j, (frac, label) in enumerate([(0.15, 0.3), (0.75, 1.5)]):
         n, ps, theor, exp, std = _extract_from_frac(frac, all_theor_vals[i], all_exp_vals[i], all_exp_stds[i], nn2, nn1)
 
-        ax.errorbar(ps / d + j * jitter, exp, yerr=2 * std / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
-        ax.plot(ps / d, theor, label=r'$\gamma_2 = %.1f$' % label, linewidth=1, color=f'C{j}')
+        ax.errorbar(ps[::2] / d + j * jitter, exp[::2], yerr=2 * std[::2] / np.sqrt(iters), fmt='o', color=f'C{j}', zorder=-1, alpha=0.7, markersize=5)
+        ax.plot(ps[::2] / d, theor[::2], label=r'$\gamma_2 = %.1f$' % label, linewidth=1, color=f'C{j}')
 
         # if j == 1:
         #     ax.axvline(x=0.3, color='gray', linestyle='dashed', alpha=0.9, label=r'$\gamma_1=0.3$')
@@ -333,8 +334,8 @@ for i, ax in enumerate(axs_set[0]):
 
     fig.colorbar(ctr0, ax=ax)
 
-axs_set[0][0].set_title(r'$\sigma = 1, \ell = 1$')
-axs_set[0][1].set_title(r'$\sigma > 1, \ell = 1$')
+axs_set[0][0].set_title(r'$\sigma^2 = 1, \ell = 1$')
+axs_set[0][1].set_title(r'$\sigma^2 > 1, \ell = 1$')
 
 for i, ax in enumerate(axs_set[1]):
     theor_vals_clip = np.clip(all_theor_vals[i+2], -np.inf, clip_const)
@@ -350,8 +351,8 @@ for i, ax in enumerate(axs_set[1]):
 
     fig.colorbar(ctr0, ax=ax)
 
-axs_set[1][0].set_title(r'$\sigma = 1, \ell > 1$')
-axs_set[1][1].set_title(r'$\sigma > 1, \ell > 1$')
+axs_set[1][0].set_title(r'$\sigma^2 = 1, \ell > 1$')
+axs_set[1][1].set_title(r'$\sigma^2 > 1, \ell > 1$')
 
 jitter = 0
 for i, ax in enumerate(axs_set[2]):
@@ -376,8 +377,8 @@ for i, ax in enumerate(axs_set[2]):
         ax.grid(visible=True)
         ax.legend()
 
-axs_set[2][0].set_title(r'$\sigma = 1, \ell = 1$')
-axs_set[2][1].set_title(r'$\sigma > 1, \ell = 1$')
+axs_set[2][0].set_title(r'$\sigma^2 = 1, \ell = 1$')
+axs_set[2][1].set_title(r'$\sigma^2 > 1, \ell = 1$')
 
 
 for i, ax in enumerate(axs_set[3]):
@@ -405,8 +406,8 @@ for i, ax in enumerate(axs_set[3]):
         ax.grid(visible=True)
         ax.legend()
 
-axs_set[3][0].set_title(r'$\sigma = 1$')
-axs_set[3][1].set_title(r'$\sigma > 1$')
+axs_set[3][0].set_title(r'$\sigma^2 = 1$')
+axs_set[3][1].set_title(r'$\sigma^2 > 1$')
 
 # TODO: optimal calculation may not still work
 # fig.suptitle('Optimal NN model architecture depends on target-prior mismatch')
