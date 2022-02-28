@@ -156,7 +156,7 @@ nn1, nn2 = np.meshgrid(n1s, n2s)
 sig = 1
 eta = 0
 ps = [50, 150]
-iters = 200
+iters = 5
 inner_iters = 200
 
 results_path = Path('deep_results_fig2.npy')
@@ -216,7 +216,7 @@ for i, (ax, p) in enumerate(zip(axs_set[0], ps)):
     if i == 1:
         fig.colorbar(ctr0, ax=ax, format='%.2f')
     else:
-        fig.colorbar(ctr0, ax=ax)
+        fig.colorbar(ctr0, ax=ax, format='%.2f')
 
 axs_set[0][0].set_title(r'$\alpha < 1$')
 axs_set[0][1].set_title(r'$\alpha > 1$')
