@@ -19,7 +19,8 @@ def _theory_deep_full_p_small(a, sig, gs, eta=0):
     main_prod = sig ** 2 * (1 - a) * prod([((g - a) / g) * z + a * (1 - a + eta ** 2) / g for g in gs])
     poly = z ** (l + 1) - main_prod
 
-    def _keep_good(roots):
+    def _keep_good(roots, eta=0):
+        good_roots = []
         for r in roots:
             factors = []
             for g in gs:
@@ -27,9 +28,9 @@ def _theory_deep_full_p_small(a, sig, gs, eta=0):
                 factors.append(check > 0)
 
             if np.all(factors):
-                return r
-
-        return None
+                good_roots.append(r)
+        
+        return np.max(good_roots)
 
     try:
         # root = max(real_roots(poly)).evalf()
@@ -152,17 +153,32 @@ def compute_loss(p, d, ns, sig, eta, iters=5, inner_iters=100):
 
 # <codecell>
 # z = symbols('z')
-# l = 2
 # a = 0.5
-# gs = [0.1, 0.1]
+# gs = [1]
+# l = len(gs)
 
 # main_prod =(1 - a) * prod([((g - a) / g) * z + a * (1 - a) / g for g in gs])
 # poly = z ** (l + 1) - main_prod
 
-# def _is_good(r):
-#     return ((0.1 - 0.5)  * r + 0.5 * (0.5)) / (0.1 ** r) > 0
+# def _keep_good(roots, eta=0):
+#     good_roots = []
+#     for r in roots:
+#         factors = []
+#         for g in gs:
+#             check = ((g - a) * r + a * (1 - a + eta ** 2)) / g ** r
+#             factors.append(check > 0)
 
-# roots = [r.evalf() for r in real_roots(poly) if _is_good(r)]
+#         if np.all(factors):
+#             good_roots.append(r)
+    
+#     return np.max(good_roots)
 
-# print(roots)
+# roots = [r.evalf() for r in real_roots(poly)]
+# root = _keep_good(roots)
+
+# root_alt = np.max(roots)
+
+
+# print(root)
+# print(root_alt)
 # %%

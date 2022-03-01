@@ -317,6 +317,7 @@ else:
     np.save('deep_results_fig3.npy', results)
 
 # %%
+skip_idx = 2
 fig, axs_set = plt.subplots(4, 2, figsize=(8, 12))
 clip_const = 3
 
@@ -334,7 +335,7 @@ for i, ax in enumerate(axs_set[0]):
 
     fig.colorbar(ctr0, ax=ax)
 
-axs_set[0][0].set_title(r'$\sigma^2 = 1, \ell = 1$')
+axs_set[0][0].set_title(r'$\sigma^2 < 1, \ell = 1$')
 axs_set[0][1].set_title(r'$\sigma^2 > 1, \ell = 1$')
 
 for i, ax in enumerate(axs_set[1]):
@@ -351,7 +352,7 @@ for i, ax in enumerate(axs_set[1]):
 
     fig.colorbar(ctr0, ax=ax)
 
-axs_set[1][0].set_title(r'$\sigma^2 = 1, \ell > 1$')
+axs_set[1][0].set_title(r'$\sigma^2 < 1, \ell > 1$')
 axs_set[1][1].set_title(r'$\sigma^2 > 1, \ell > 1$')
 
 jitter = 0
@@ -377,7 +378,7 @@ for i, ax in enumerate(axs_set[2]):
         ax.grid(visible=True)
         ax.legend()
 
-axs_set[2][0].set_title(r'$\sigma^2 = 1, \ell = 1$')
+axs_set[2][0].set_title(r'$\sigma^2 < 1, \ell = 1$')
 axs_set[2][1].set_title(r'$\sigma^2 > 1, \ell = 1$')
 
 
@@ -406,7 +407,7 @@ for i, ax in enumerate(axs_set[3]):
         ax.grid(visible=True)
         ax.legend()
 
-axs_set[3][0].set_title(r'$\sigma^2 = 1$')
+axs_set[3][0].set_title(r'$\sigma^2 < 1$')
 axs_set[3][1].set_title(r'$\sigma^2 > 1$')
 
 # TODO: optimal calculation may not still work
