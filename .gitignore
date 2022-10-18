@@ -2,3 +2,5 @@ venv_bnn/
 fig/
 
 __pycache__/
+.vscode/
+*.npy
