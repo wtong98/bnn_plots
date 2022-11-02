@@ -1,5 +1,6 @@
 venv_bnn/
 fig/
+*.png
 
 __pycache__/
 .vscode/
