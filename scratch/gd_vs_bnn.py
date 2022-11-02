@@ -85,7 +85,7 @@ def run_experiment(n_runs=10, p=50, n=100, d=50, l=2, beta=0, eta=0.1, batch_siz
 
     for _ in range(n_runs):
         # TODO: figure out possible errors?
-        # _, xs, ys = make_ds(p, d=d, eta=eta, w=w_teacher)
+        _, xs, ys = make_ds(p, d=d, eta=eta, w=w_teacher)
         weights = init_model([d] + [n] * l)
 
         last_loss = np.inf
@@ -164,7 +164,7 @@ def _theory_p_small(a, sig, gs, eta=0):
 theor_pred = run_theory(0.5, 1, [0.5, 0.5], eta=1)
 print('THEORY', theor_pred)
 
-exp_pred = run_experiment(3, p=26, n=25, d=100, l=2, beta=1, eta=1, batch_size=10000)
+exp_pred = run_experiment(10, p=26, n=25, d=100, l=2, beta=1, eta=1, batch_size=None)
 print('EXP', exp_pred)
 
 
@@ -195,7 +195,7 @@ print('done!')
 
 fig, ax0 = plt.subplots()
 
-ax0.plot(ps/d, theor_curve, color='C0')
+l1 = ax0.plot(ps/d, theor_curve, color='C0', label='BNN')
 ax0.set_ylim(0,5)
 ax0.set_ylabel('BNN predicted loss', color='C0')
 ax0.tick_params(axis='y', color='C0')
@@ -208,7 +208,8 @@ ps_exp, global_loss, local_loss, se = zip(*exp_curve)
 ps_exp = np.array(ps_exp)
 local_loss = np.array(local_loss)
 
-ax1.errorbar(ps_exp / d, local_loss, fmt='o--', markersize=3, yerr=2 * np.array(se), color='C1')
+l2 = ax1.errorbar(ps_exp / d, local_loss, fmt='o--', markersize=3, yerr=2 * np.array(se), color='C1', label='NN with GD')
+# ax1.errorbar(ps_exp / d, global_loss, color='C2')
 ax1.set_ylabel('NN loss after GD', color='C1')
 ax1.tick_params(axis='y', color='C1')
 
